@@ -1,0 +1,168 @@
+{
+  "name": "gmail",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -32
+      ],
+      "id": "dec79cc9-0b26-463c-ad47-8bb6ac6dfecd",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "limit": 5,
+        "filters": {
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        16
+      ],
+      "id": "fe23bc6b-ea5c-4067-b1b5-2a40f5286",
+      "name": "Get many threads",
+      "webhookId": "ec048ac7-a4d6-44da5e3-0939e3f560d9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oUpL1lbI36VDSbIH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all email threads into one text\n\nlet combinedEmails = \"\";\n\nfor (const item of items) {\n  const snippet = item.json.snippet || \"\";\n\n  combinedEmails += snippet + \"\\n\\n\";\n}\n\nreturn [\n  {\n    json: {\n      emailText: combinedEmails\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        64
+      ],
+      "id": "3312340a-aa79-4dc9-93c6fd06ec086d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an intelligent email assistant.\n\nAnalyze the following Gmail emails.\n\nFor each email:\n1. Identify the sender and subject if available.\n2. Provide a short summary.\n3. Identify whether it is important, promotional, or requires action.\n4. Highlight any urgent tasks or deadlines.\n\nIgnore unnecessary promotional emails unless they contain important information.\n\nHere are the emails:\n\n{{ $json.emailText }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        112
+      ],
+      "id": "772c3868-cd0f-4f670ff-b49d67d",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "8PoUw7APIiTyrgY8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lakshmikrishnavr.alish@gmail.com",
+        "subject": "AI Summary of My Gmail Emails",
+        "message": "={{ $('Message a model').item.json.content.parts[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        112
+      ],
+      "id": "529ff87f-b0ed-43b5-bd9d-24f36c2fc88e",
+      "name": "Send a message",
+      "webhookId": "4e482f21-10a1-4879-873b3d9e04c2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oUpL1lbI36VDSbIH",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get many threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many threads": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e47f7d6e-a5e4-40d9d-6de945def057",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "14608ee06def05427ce467ad329a8ac8b9b0141ad4513b3278c53fc55f0e"
+  },
+  "nodeGroups": [],
+  "id": "fj0aGskcVw94qivv",
+  "tags": []
+}
